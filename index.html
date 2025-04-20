@@ -1,0 +1,1709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Medication Reminder Chatbot</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/marked/lib/marked.min.css">
+  <style>
+    :root {
+      --primary-color: #007aff;
+      --secondary-color: #5ac8fa;
+      --accent-color: #5856d6;
+      --background-gradient: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+      --card-background: rgba(255, 255, 255, 0.92);
+      --bot-msg-bg: #f0f3f8;
+      --user-msg-bg: #e8f0fe;
+      --transition-speed: 0.3s;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+      background: var(--background-gradient);
+      position: relative;
+      margin: 0; 
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+    }
+    
+    /* Medical themed background elements */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: url('https://img.freepik.com/free-vector/healthcare-background-with-medical-symbols-geometric-style_1017-26363.jpg');
+      background-size: cover;
+      background-position: center;
+      opacity: 0.15;
+      z-index: -1;
+    }
+    
+    .chat-container { 
+      width: 90%;
+      max-width: 700px;
+      background: var(--card-background);
+      border-radius: 20px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+      transform: translateY(0);
+      transition: transform 0.5s ease;
+      animation: slideIn 0.5s ease forwards;
+      display: flex;
+      flex-direction: column;
+      height: 85vh;
+      margin: 20px;
+    }
+    
+    @keyframes slideIn {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    
+    .header { 
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      color: white;
+      padding: 20px;
+      font-size: 22px;
+      font-weight: 600;
+      text-align: center;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .header .logo {
+      margin-right: 10px;
+      font-size: 26px;
+    }
+    
+    .header-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+    
+    .header-title {
+      display: flex;
+      align-items: center;
+    }
+    
+    .header-actions {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .header-btn {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .header-btn:hover {
+      background: rgba(255,255,255,0.3);
+      transform: translateY(-2px);
+    }
+    
+    #chatbox { 
+      flex: 1;
+      overflow-y: scroll;
+      padding: 25px;
+      scroll-behavior: smooth;
+      background-color: rgba(250, 250, 250, 0.7);
+    }
+    
+    .msg {
+      margin-bottom: 20px;
+      max-width: 85%;
+      padding: 14px 18px;
+      border-radius: 18px;
+      position: relative;
+      animation: fadeIn 0.3s ease forwards;
+      line-height: 1.5;
+      font-size: 15px;
+      width: fit-content;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .msg .icon {
+      margin-right: 8px;
+      font-size: 1.1em;
+    }
+    
+    .msg.bot { 
+      background: var(--bot-msg-bg);
+      color: #333;
+      border-top-left-radius: 4px;
+      float: left;
+      clear: both;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.05);
+    }
+    
+    .msg.user { 
+      background: var(--primary-color);
+      color: white;
+      border-top-right-radius: 4px;
+      float: right;
+      clear: both;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.05);
+    }
+    
+    .msg strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      opacity: 0.8;
+    }
+    
+    .bot-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      color: white;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 10px;
+      font-size: 18px;
+      box-shadow: 0 2px 8px rgba(0,122,255,0.3);
+    }
+    
+    .input-area { 
+      display: flex;
+      padding: 16px;
+      border-top: 1px solid rgba(0,0,0,0.05);
+      background: white;
+      position: relative;
+    }
+    
+    #userInput { 
+      flex: 1;
+      padding: 15px;
+      font-size: 15px;
+      border: none;
+      border-radius: 30px;
+      background: var(--bot-msg-bg);
+      transition: all var(--transition-speed) ease;
+      outline: none;
+    }
+    
+    #userInput:focus {
+      box-shadow: 0 0 0 2px var(--primary-color);
+    }
+    
+    button { 
+      margin-left: 10px;
+      padding: 12px 20px;
+      font-size: 15px;
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      transition: all var(--transition-speed) ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0, 122, 255, 0.3);
+    }
+    
+    button .icon {
+      margin-left: 6px;
+    }
+    
+    /* Quick Responses */
+    .quick-responses {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+      padding: 5px 0;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    
+    .quick-response-btn {
+      background: white;
+      border: 1px solid var(--primary-color);
+      color: var(--primary-color);
+      border-radius: 20px;
+      padding: 8px 14px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    
+    .quick-response-btn:hover {
+      background: var(--primary-color);
+      color: white;
+      transform: translateY(-2px);
+    }
+    
+    /* Markdown styling */
+    .msg.bot h1, 
+    .msg.bot h2, 
+    .msg.bot h3, 
+    .msg.bot h4, 
+    .msg.bot h5, 
+    .msg.bot h6 {
+      margin-top: 10px;
+      margin-bottom: 5px;
+      color: var(--primary-color);
+    }
+    
+    .msg.bot h2 {
+      font-size: 20px;
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+      padding-bottom: 5px;
+      margin-bottom: 10px;
+    }
+    
+    .msg.bot h3 {
+      font-size: 18px;
+    }
+    
+    .msg.bot h4 {
+      font-size: 16px;
+    }
+    
+    .msg.bot ul, 
+    .msg.bot ol {
+      margin: 10px 0;
+      padding-left: 20px;
+    }
+    
+    .msg.bot li {
+      margin-bottom: 5px;
+    }
+    
+    .msg.bot p {
+      margin-bottom: 10px;
+    }
+    
+    .msg.bot blockquote {
+      border-left: 4px solid var(--accent-color);
+      padding-left: 10px;
+      margin: 10px 0;
+      font-style: italic;
+      color: #555;
+    }
+    
+    .msg.bot a {
+      color: var(--primary-color);
+      text-decoration: none;
+    }
+    
+    .msg.bot a:hover {
+      text-decoration: underline;
+    }
+    
+    .msg.bot code {
+      background: rgba(0,0,0,0.05);
+      padding: 2px 5px;
+      border-radius: 3px;
+      font-family: monospace;
+      /* Add wrapping for code blocks */
+      white-space: pre-wrap;       /* CSS3 */
+      white-space: -moz-pre-wrap;  /* Firefox */
+      white-space: -pre-wrap;      /* Opera <7 */
+      white-space: -o-pre-wrap;    /* Opera 7 */
+      word-wrap: break-word;       /* IE */
+      overflow-wrap: break-word;   /* Modern browsers */
+    }
+
+    /* Ensure pre tags also wrap correctly */
+    .msg.bot pre {
+      white-space: pre-wrap;       /* Allow wrapping */
+      word-wrap: break-word;       /* Break long words */
+      overflow-wrap: break-word;   /* Modern equivalent */
+      background: rgba(0,0,0,0.03); /* Optional: slight background for pre blocks */
+      padding: 10px;               /* Optional: padding for pre blocks */
+      border-radius: 5px;          /* Optional: rounded corners */
+      margin: 10px 0;              /* Optional: margin */
+      font-family: monospace;      /* Ensure monospace font */
+      font-size: 0.9em;            /* Adjust font size if needed */
+    }
+
+    .msg.bot table {
+      border-collapse: collapse;
+      margin: 15px 0;
+      width: 100%;
+    }
+    
+    .msg.bot th, 
+    .msg.bot td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    
+    .msg.bot th {
+      background-color: #f2f2f2;
+    }
+    
+    /* Clear float */
+    .clearfix::after {
+      content: "";
+      clear: both;
+      display: table;
+    }
+    
+    /* Medication visualization */
+    .medication-schedule {
+      background: white;
+      border-radius: 10px;
+      padding: 15px;
+      margin: 10px 0;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .medication-item {
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .medication-time {
+      background: var(--primary-color);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 14px;
+      margin-right: 15px;
+    }
+    
+    .medication-name {
+      font-weight: bold;
+      font-size: 16px;
+    }
+    
+    /* Responsive design */
+    @media (max-width: 768px) {
+      .chat-container {
+        width: 95%;
+        height: 90vh;
+        margin: 15px;
+        max-width: none;
+      }
+      
+      .msg {
+        max-width: 90%;
+      }
+      
+      .header {
+        padding: 15px;
+        font-size: 20px;
+      }
+    }
+    
+    /* Loading animation */
+    .typing-indicator {
+      display: flex;
+      padding: 15px;
+    }
+    
+    .typing-indicator span {
+      height: 10px;
+      width: 10px;
+      float: left;
+      margin: 0 2px;
+      background-color: var(--primary-color);
+      display: block;
+      border-radius: 50%;
+      opacity: 0.4;
+    }
+    
+    .typing-indicator span:nth-of-type(1) {
+      animation: 1s typing-bounce infinite 0.1s;
+    }
+    
+    .typing-indicator span:nth-of-type(2) {
+      animation: 1s typing-bounce infinite 0.2s;
+    }
+    
+    .typing-indicator span:nth-of-type(3) {
+      animation: 1s typing-bounce infinite 0.3s;
+    }
+    
+    @keyframes typing-bounce {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-5px);
+      }
+    }
+    
+    /* User profile modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+    
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .modal-container {
+      background-color: white;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      max-width: 500px;
+      width: 90%;
+      transform: translateY(20px);
+      transition: all 0.3s ease;
+    }
+    
+    .modal-overlay.active .modal-container {
+      transform: translateY(0);
+    }
+    
+    .modal-header {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .modal-header h2 {
+      color: var(--primary-color);
+      margin-bottom: 10px;
+    }
+    
+    .modal-body {
+      margin-bottom: 20px;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+    
+    .form-group input, 
+    .form-group select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      font-size: 15px;
+    }
+    
+    .modal-footer {
+      text-align: center;
+    }
+    
+    .modal-footer button {
+      padding: 12px 30px;
+    }
+    
+    /* Condition cards */
+    .condition-cards {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 15px 0;
+    }
+    
+    .condition-card {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 15px;
+      width: calc(50% - 5px);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    
+    .condition-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      border-color: var(--primary-color);
+    }
+    
+    .condition-card.active {
+      background: rgba(0, 122, 255, 0.05);
+      border-color: var(--primary-color);
+    }
+    
+    .condition-icon {
+      font-size: 24px;
+      margin-bottom: 10px;
+      color: var(--primary-color);
+    }
+    
+    .condition-name {
+      font-weight: 500;
+      font-size: 16px;
+    }
+    
+    .condition-description {
+      font-size: 12px;
+      color: #777;
+      margin-top: 5px;
+    }
+    
+    /* User profile button */
+    .user-profile-btn {
+      background: transparent;
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: white;
+      font-size: 18px;
+      transition: all 0.3s ease;
+    }
+    
+    .user-profile-btn:hover {
+      background: rgba(255,255,255,0.2);
+    }
+    
+    /* Medication cards when viewing all */
+    .medication-list {
+      margin: 15px 0;
+    }
+    
+    .medication-category {
+      margin-bottom: 15px;
+    }
+    
+    .medication-category-title {
+      font-weight: 500;
+      margin-bottom: 10px;
+      padding-bottom: 5px;
+      border-bottom: 1px solid #eee;
+      color: var(--primary-color);
+    }
+    
+    /* Custom condition input */
+    .custom-condition {
+      margin-top: 15px;
+      display: none;
+    }
+    
+    .custom-condition.active {
+      display: block;
+    }
+    
+    /* Reminder notification */
+    .reminder-notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: white;
+      border-left: 4px solid var(--primary-color);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      padding: 15px 20px;
+      min-width: 300px;
+      z-index: 1000;
+      border-radius: 8px;
+      animation: slideInRight 0.5s forwards;
+      display: none;
+    }
+    
+    @keyframes slideInRight {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    
+    .reminder-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    
+    .reminder-icon {
+      background: var(--primary-color);
+      color: white;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 10px;
+    }
+    
+    .reminder-title {
+      font-weight: bold;
+      font-size: 16px;
+    }
+    
+    .reminder-body {
+      margin-bottom: 10px;
+    }
+    
+    .reminder-actions {
+      display: flex;
+      justify-content: flex-end;
+    }
+    
+    .reminder-btn {
+      padding: 6px 12px;
+      border-radius: 15px;
+      font-size: 13px;
+      cursor: pointer;
+      border: none;
+      margin-left: 8px;
+    }
+    
+    .reminder-btn.primary {
+      background: var(--primary-color);
+      color: white;
+    }
+    
+    .reminder-btn.secondary {
+      background: #f1f1f1;
+      color: #333;
+    }
+    
+    /* Dashboard link */
+    .dashboard-link {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: var(--primary-color);
+      color: white;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 3px 10px rgba(0, 122, 255, 0.3);
+      cursor: pointer;
+      z-index: 90;
+      transition: all 0.3s ease;
+    }
+    
+    .dashboard-link:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 15px rgba(0, 122, 255, 0.4);
+    }
+    
+    .dashboard-icon {
+      font-size: 24px;
+    }
+
+    /* Fix overflow and alignment issues */
+    .chat-container {
+      max-height: 90vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #chatbox {
+      overflow-y: auto;
+      max-height: calc(100% - 120px);
+    }
+
+    .input-area {
+      position: sticky;
+      bottom: 0;
+      background: white;
+    }
+
+    /* Fix button alignment */
+    button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Fix quick response overflow */
+    .quick-responses {
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    /* Floating Objects Background */
+    .floating-objects {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -2; /* Behind the background image overlay */
+      overflow: hidden; /* Prevent shapes from going outside */
+      pointer-events: none; /* Allow clicks to pass through */
+    }
+
+    .float-shape {
+      position: absolute;
+      background-color: rgba(0, 122, 255, 0.1); /* Semi-transparent primary color */
+      border-radius: 50%;
+      /* Speed up the base animation */
+      animation: floatAnimation 10s infinite ease-in-out;
+    }
+
+    .float-shape.shape1 {
+      width: 80px;
+      height: 80px;
+      left: 10%;
+      bottom: 10%;
+      /* Adjust individual durations */
+      animation-duration: 12s;
+      animation-delay: -2s;
+    }
+
+    .float-shape.shape2 {
+      width: 120px;
+      height: 120px;
+      left: 70%;
+      bottom: 60%;
+      /* Adjust individual durations */
+      animation-duration: 15s;
+      animation-delay: -5s;
+      background-color: rgba(90, 200, 250, 0.1); /* Secondary color */
+    }
+
+    .float-shape.shape3 {
+      width: 50px;
+      height: 50px;
+      left: 40%;
+      bottom: 30%;
+      /* Adjust individual durations */
+      animation-duration: 9s;
+      animation-delay: -1s;
+    }
+
+     .float-shape.shape4 {
+      width: 150px;
+      height: 150px;
+      left: 85%;
+      bottom: 5%;
+      /* Adjust individual durations */
+      animation-duration: 18s;
+      animation-delay: -7s;
+       background-color: rgba(88, 86, 214, 0.08); /* Accent color */
+    }
+
+     .float-shape.shape5 {
+      width: 60px;
+      height: 60px;
+      left: 20%;
+      bottom: 80%;
+      /* Adjust individual durations */
+      animation-duration: 11s;
+      animation-delay: -4s;
+       background-color: rgba(90, 200, 250, 0.1); /* Secondary color */
+    }
+
+
+    @keyframes floatAnimation {
+      0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 0.7;
+      }
+      50% {
+        /* Increase movement range */
+        transform: translateY(-40px) translateX(30px) rotate(180deg);
+        opacity: 0.4;
+      }
+      100% {
+        transform: translateY(0) rotate(360deg);
+        opacity: 0.7;
+      }
+    }
+
+  </style>
+</head>
+<body>
+  <!-- Add floating objects container -->
+  <div class="floating-objects">
+    <div class="float-shape shape1"></div>
+    <div class="float-shape shape2"></div>
+    <div class="float-shape shape3"></div>
+    <div class="float-shape shape4"></div>
+    <div class="float-shape shape5"></div>
+  </div>
+
+  <div class="chat-container">
+    <div class="header">
+      <div class="header-content">
+        <div class="header-title">
+          <i class="fas fa-pills logo"></i>&nbsp; MedAssist AI
+        </div>
+        <div class="header-actions">
+          <button class="header-btn" id="view-all-btn" title="View all medications">
+            <i class="fas fa-clipboard-list"></i>
+          </button>
+          <button class="header-btn" id="clear-chat-btn" title="Clear chat">
+            <i class="fas fa-trash-alt"></i>
+          </button>
+          <button class="user-profile-btn" id="user-profile-btn" title="Your Profile">
+            <i class="fas fa-user"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div id="chatbox"></div>
+    <div class="quick-responses" id="quickResponses">
+      <!-- Quick response buttons will be added here dynamically -->
+    </div>
+    <div class="input-area">
+      <input id="userInput" placeholder="Type your message..." autocomplete="off" />
+      <button onclick="sendMessage()">Send <i class="fas fa-paper-plane icon"></i></button>
+    </div>
+  </div>
+  
+  <!-- User Profile Modal -->
+  <div class="modal-overlay" id="userProfileModal">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h2>Your Medical Profile</h2>
+        <p>Help us personalize your medication reminders</p>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="userName">Your Name</label>
+          <input type="text" id="userName" placeholder="Enter your name">
+        </div>
+        <div class="form-group">
+          <label for="userAge">Age</label>
+          <input type="number" id="userAge" placeholder="Your age">
+        </div>
+        <div class="form-group">
+          <label>Do you have any of these conditions?</label>
+          <div class="condition-cards">
+            <div class="condition-card" data-condition="diabetes">
+              <div class="condition-icon"><i class="fas fa-heartbeat"></i></div>
+              <div class="condition-name">Diabetes</div>
+              <div class="condition-description">Type 1 or Type 2</div>
+            </div>
+            <div class="condition-card" data-condition="hypertension">
+              <div class="condition-icon"><i class="fas fa-chart-line"></i></div>
+              <div class="condition-name">Hypertension</div>
+              <div class="condition-description">High Blood Pressure</div>
+            </div>
+            <div class="condition-card" data-condition="asthma">
+              <div class="condition-icon"><i class="fas fa-lungs"></i></div>
+              <div class="condition-name">Asthma</div>
+              <div class="condition-description">Respiratory condition</div>
+            </div>
+            <div class="condition-card" data-condition="dengue">
+              <div class="condition-icon"><i class="fas fa-bug"></i></div>
+              <div class="condition-name">Dengue</div>
+              <div class="condition-description">Dengue fever/recovery</div>
+            </div>
+            <div class="condition-card" data-condition="other">
+              <div class="condition-icon"><i class="fas fa-plus"></i></div>
+              <div class="condition-name">Other</div>
+              <div class="condition-description">Add custom condition</div>
+            </div>
+          </div>
+          <div class="custom-condition" id="customConditionContainer">
+            <input type="text" id="customCondition" placeholder="Enter your condition">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="preferredReminderTime">Preferred Reminder Time</label>
+          <input type="time" id="preferredReminderTime" value="08:00">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="saveProfileBtn">Save Profile</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Reminder Notification -->
+  <div class="reminder-notification" id="reminderNotification">
+    <div class="reminder-header">
+      <div class="reminder-icon">
+        <i class="fas fa-bell"></i>
+      </div>
+      <div class="reminder-title">Medicine Reminder</div>
+    </div>
+    <div class="reminder-body" id="reminderBody">
+      It's time to take your medication!
+    </div>
+    <div class="reminder-actions">
+      <button class="reminder-btn secondary" onclick="dismissReminder()">Dismiss</button>
+      <button class="reminder-btn primary" onclick="takenReminder()">Taken</button>
+    </div>
+  </div>
+  
+  <!-- Dashboard Link -->
+  <a href="/reminders" class="dashboard-link" title="Go to Reminders Dashboard">
+    <i class="fas fa-clock dashboard-icon"></i>
+  </a>
+  
+  <!-- Include marked.js for Markdown parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- Include howler.js for sound alerts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+  <script>
+    // Configure marked for safe rendering
+    marked.setOptions({
+      breaks: true,
+      gfm: true,
+      smartLists: true
+    });
+    
+    // User profile data
+    let userProfile = {
+      name: "",
+      age: "",
+      conditions: [],
+      customCondition: "",
+      preferredReminderTime: "08:00"
+    };
+    
+    // Sound for reminder alerts
+    const reminderSound = new Howl({
+      src: ['https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3'],
+      volume: 0.7,
+      loop: true, // Ensure loop is true
+      html5: true // Use HTML5 Audio to improve reliability on some browsers
+    });
+    
+    // Active reminders with timers
+    const activeReminders = {};
+    
+    // Quick response suggestions based on context
+    const quickResponseSets = {
+      default: [
+        { text: "View all medications", action: "view_all" },
+        { text: "Set a new reminder", action: "new_reminder" }
+      ],
+      medicationAdded: [
+        { text: "View medication details", action: "view_details" },
+        { text: "Set another reminder", action: "new_reminder" },
+        { text: "View all medications", action: "view_all" }
+      ],
+      conditionBased: {
+        diabetes: [
+          { text: "Diabetes medications", action: "Tell me about diabetes medications" },
+          { text: "Set insulin reminder", action: "Remind me about insulin" }
+        ],
+        hypertension: [
+          { text: "Blood pressure meds", action: "Tell me about hypertension medications" },
+          { text: "Set BP med reminder", action: "Remind me about my blood pressure medicine" }
+        ],
+        asthma: [
+          { text: "Asthma medications", action: "Tell me about asthma medications" },
+          { text: "Set inhaler reminder", action: "Remind me about my inhaler" }
+        ],
+        dengue: [
+          { text: "Dengue medications", action: "Tell me about dengue medications" },
+          { text: "Set fever med reminder", action: "Remind me about my dengue medicines" }
+        ]
+      }
+    };
+    
+    // Variables to track chat state
+    let currentMedication = "";
+    let isWaitingForBotResponse = false;
+    // Remove chatHistoryLoaded flag, we want to load every time
+    // let chatHistoryLoaded = false;
+    
+    // Add an initial greeting when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      // Fetch user profile first
+      fetchUserProfile().then(() => {
+          // Then load chat history
+          loadChatHistory(); // Load history every time the page loads
+      });
+
+      // Initialize button listeners
+      document.getElementById('view-all-btn').addEventListener('click', function() {
+        handleQuickResponse('view_all');
+      });
+      
+      // Add listener for the new clear chat button
+      document.getElementById('clear-chat-btn').addEventListener('click', function() {
+        if (confirm("Are you sure you want to clear the entire chat history? This cannot be undone.")) {
+            clearChatHistory();
+        }
+      });
+      
+      document.getElementById('user-profile-btn').addEventListener('click', showProfileModal);
+      
+      // Profile modal setup
+      document.getElementById('saveProfileBtn').addEventListener('click', saveUserProfile);
+      
+      // Set up condition card toggling including custom condition
+      document.querySelectorAll('.condition-card').forEach(card => {
+        card.addEventListener('click', function() {
+          this.classList.toggle('active');
+          
+          // Show/hide custom condition input
+          if (this.dataset.condition === 'other') {
+            document.getElementById('customConditionContainer').classList.toggle('active', this.classList.contains('active'));
+          }
+        });
+      });
+      
+      // Close modal when clicking outside
+      document.getElementById('userProfileModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+          hideProfileModal();
+        }
+      });
+      
+      // Populate profile form with saved data if available
+      populateProfileForm();
+      
+      // Start checking for reminders
+      startReminderChecks();
+    });
+    
+    function startReminderChecks() {
+      // Check for reminders immediately on load
+      checkForReminders();
+      // Check for reminders every 10 seconds for faster testing/response
+      // Change back to 60000 (1 minute) for production
+      setInterval(checkForReminders, 10000);
+    }
+    
+    function checkForReminders() {
+      const now = new Date();
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+      
+      // Fetch all reminders
+      fetch('/get-reminders')
+        .then(res => res.json())
+        .then(data => {
+          const reminders = data.reminders || [];
+          
+          reminders.forEach(reminder => {
+            // Skip if reminder time is not set
+            if (!reminder.time) return;
+            
+            // Parse the reminder time
+            const timeParts = reminder.time.split(/[: ]/);
+            if (timeParts.length < 2) return; // Invalid time format
+            
+            let reminderHour = parseInt(timeParts[0]);
+            const reminderMinute = parseInt(timeParts[1] || 0);
+            
+            // Handle AM/PM format
+            if (timeParts[2]) {
+              const ampm = timeParts[2].toUpperCase();
+              if (ampm === 'PM' && reminderHour < 12) {
+                reminderHour += 12;
+              } else if (ampm === 'AM' && reminderHour === 12) {
+                reminderHour = 0; // Midnight case
+              }
+            }
+            
+            // Check if it's time for the reminder
+            // Use a small window (e.g., check if current time matches reminder time in the last 10 seconds)
+            // This helps avoid missing the exact minute due to interval timing
+            const reminderTimeToday = new Date();
+            reminderTimeToday.setHours(reminderHour, reminderMinute, 0, 0);
+            
+            // Check if the current time is within 10 seconds *after* the reminder time
+            const diffSeconds = (now - reminderTimeToday) / 1000;
+            
+            // Only trigger if it's the correct hour/minute and hasn't been shown recently
+            if (currentHour === reminderHour && currentMinute === reminderMinute && !activeReminders[reminder.id]) {
+               // Check if the reminder time just passed (within the interval check window)
+               // This prevents triggering multiple times if the check runs slightly late
+               if (diffSeconds >= 0 && diffSeconds < 15) { // Check within 15 seconds past the minute
+                   showReminder(reminder);
+                   // Mark as shown to prevent re-triggering immediately
+                   activeReminders[reminder.id] = true;
+                   // Remove from active list after a while (e.g., 2 minutes)
+                   setTimeout(() => {
+                       delete activeReminders[reminder.id];
+                   }, 120000);
+               }
+            }
+          });
+        })
+        .catch(err => console.error('Error checking reminders:', err));
+    }
+    
+    function showReminder(reminder) {
+      // Stop any previous sound first
+      reminderSound.stop();
+      // Play sound (Howler handles looping)
+      reminderSound.play();
+      
+      // Set notification content
+      document.getElementById('reminderBody').innerHTML = `
+        It's time to take <strong>${reminder.name}</strong>!
+      `;
+      
+      // Show notification
+      const notification = document.getElementById('reminderNotification');
+      notification.style.display = 'block';
+      
+      // Also trigger browser notification if available
+      if ('Notification' in window) {
+        if (Notification.permission === 'granted') {
+          new Notification('Time to take your medication!', {
+            body: `It's time to take ${reminder.name}`,
+            icon: '/static/pill-icon.png',
+            requireInteraction: true // Keep notification until user interacts with it
+          });
+        } else if (Notification.permission !== 'denied') {
+          Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+              new Notification('Time to take your medication!', {
+                body: `It's time to take ${reminder.name}`,
+                icon: '/static/pill-icon.png',
+                requireInteraction: true
+              });
+            }
+          });
+        }
+      }
+      
+      // Auto-hide after 5 minutes if not dismissed - REMOVED, sound loops until dismissed
+      // setTimeout(() => {
+      //   if (notification.style.display === 'block') {
+      //     dismissReminder();
+      //   }
+      // }, 300000); // 5 minutes
+    }
+    
+    function dismissReminder() {
+      document.getElementById('reminderNotification').style.display = 'none';
+      reminderSound.stop(); // Stop the looping sound
+    }
+    
+    function takenReminder() {
+      dismissReminder(); // Stops sound and hides notification
+      addMessage('You', `I took my medication (${document.getElementById('reminderBody').querySelector('strong').innerText})`, 'user');
+      addMessage('Bot', '## ✅ Great job!\n\nThank you for confirming. Your medication has been marked as taken.', 'bot');
+    }
+    
+    function showProfileModal() {
+      const modal = document.getElementById('userProfileModal');
+      modal.classList.add('active');
+      populateProfileForm();
+    }
+    
+    function hideProfileModal() {
+      const modal = document.getElementById('userProfileModal');
+      modal.classList.remove('active');
+    }
+    
+    function populateProfileForm() {
+      document.getElementById('userName').value = userProfile.name || '';
+      document.getElementById('userAge').value = userProfile.age || '';
+      document.getElementById('preferredReminderTime').value = userProfile.preferredReminderTime || '08:00';
+      document.getElementById('customCondition').value = userProfile.customCondition || '';
+      
+      // Reset all condition cards
+      document.querySelectorAll('.condition-card').forEach(card => {
+        card.classList.remove('active');
+      });
+      
+      // Set active conditions
+      userProfile.conditions.forEach(condition => {
+        const card = document.querySelector(`.condition-card[data-condition="${condition}"]`);
+        if (card) card.classList.add('active');
+      });
+      
+      // Show custom condition input if needed
+      if (userProfile.conditions.includes('other')) {
+        document.getElementById('customConditionContainer').classList.add('active');
+      } else {
+        document.getElementById('customConditionContainer').classList.remove('active');
+      }
+    }
+    
+    function fetchUserProfile() {
+      return fetch('/get-profile')
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            userProfile = data.profile;
+            
+            // Populate profile form with server data
+            populateProfileForm();
+            
+            // Update quick responses based on conditions
+            updateQuickResponses();
+          }
+        })
+        .catch(err => {
+          console.error('Error fetching user profile:', err);
+        });
+    }
+    
+    function saveUserProfile() {
+      // Get values from form
+      userProfile.name = document.getElementById('userName').value;
+      userProfile.age = document.getElementById('userAge').value;
+      userProfile.preferredReminderTime = document.getElementById('preferredReminderTime').value;
+      userProfile.customCondition = document.getElementById('customCondition').value;
+      
+      // Get selected conditions
+      userProfile.conditions = [];
+      document.querySelectorAll('.condition-card.active').forEach(card => {
+        userProfile.conditions.push(card.dataset.condition);
+      });
+      
+      // Send to server instead of just localStorage
+      fetch('/update-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userProfile)
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            // Hide modal
+            hideProfileModal();
+            
+            // Update quick responses based on conditions
+            updateQuickResponses();
+            
+            // Show confirmation
+            addMessage('Bot', `## Profile Updated!\n\nThanks${userProfile.name ? ' ' + userProfile.name : ''}! I'll personalize your medication reminders based on your profile information.\n\nYou can manage your reminders on the [Reminders Dashboard](/reminders).`, 'bot');
+          } else {
+            alert('Error updating profile: ' + data.message);
+          }
+        })
+        .catch(err => {
+          console.error('Error updating profile:', err);
+          alert('Error saving profile. Please try again.');
+        });
+    }
+    
+    function updateQuickResponses(setName = 'default') {
+      const container = document.getElementById('quickResponses');
+      container.innerHTML = '';
+      
+      let responses = [];
+      
+      // Add condition-specific quick responses if user has conditions
+      if (userProfile.conditions && userProfile.conditions.length > 0) {
+        userProfile.conditions.forEach(condition => {
+          if (quickResponseSets.conditionBased[condition]) {
+            responses = [...responses, ...quickResponseSets.conditionBased[condition]];
+          }
+        });
+      }
+      
+      // Add default responses for the specified set
+      responses = [...responses, ...quickResponseSets[setName] || quickResponseSets.default];
+      
+      // Remove duplicates by action
+      const uniqueResponses = [];
+      const actionsSeen = new Set();
+      responses.forEach(response => {
+        if (!actionsSeen.has(response.action)) {
+          uniqueResponses.push(response);
+          actionsSeen.add(response.action);
+        }
+      });
+      
+      // Display buttons
+      uniqueResponses.forEach(response => {
+        const btn = document.createElement('button');
+        btn.className = 'quick-response-btn';
+        btn.innerText = response.text;
+        btn.addEventListener('click', () => handleQuickResponse(response.action));
+        container.appendChild(btn);
+      });
+    }
+    
+    function handleQuickResponse(action) {
+      switch(action) {
+        case 'view_all':
+          sendUserMessage("View all my medication reminders");
+          break;
+        case 'new_reminder':
+          sendUserMessage("I want to set a new medication reminder");
+          break;
+        case 'view_details':
+          if (currentMedication) {
+            sendUserMessage(`Tell me about ${currentMedication}`);
+          } else {
+            sendUserMessage("What medications do I have?");
+          }
+          break;
+        default:
+          sendUserMessage(action);
+      }
+    }
+    
+    function sendUserMessage(text) {
+      document.getElementById('userInput').value = text;
+      sendMessage();
+    }
+    
+    function sendMessage() {
+      const input = document.getElementById('userInput');
+      const message = input.value.trim();
+      if (message === '' || isWaitingForBotResponse) return;
+      
+      addMessage('You', message, 'user');
+      input.value = '';
+      
+      // Show typing indicator
+      showTypingIndicator();
+      isWaitingForBotResponse = true;
+
+      fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message })
+      })
+        .then(res => res.json())
+        .then(data => {
+          // Remove typing indicator
+          removeTypingIndicator();
+          isWaitingForBotResponse = false;
+          
+          // Look for medication name in user message for context
+          if (message.toLowerCase().includes("remind") && 
+              !message.toLowerCase().includes("view all")) {
+            // Extract potential medication name (more careful extraction)
+            extractMedicationName(message);
+            
+            // If a reminder was potentially set, update quick responses
+            if (data.reply.includes("✅") || data.reply.includes("Reminder Set")) {
+              updateQuickResponses('medicationAdded');
+            }
+          }
+          
+          addMessage('Bot', data.reply, 'bot');
+        })
+        .catch(error => {
+          removeTypingIndicator();
+          isWaitingForBotResponse = false;
+          addMessage('Bot', '**Sorry, there was an error processing your request.** Please try again later.', 'bot');
+          console.error('Error:', error);
+        });
+    }
+    
+    function extractMedicationName(message) {
+        // More sophisticated extraction to avoid capturing "tell me about" phrases
+        const reminderPattern = /remind\s+(?:me\s+)?(?:about\s+)?(?:my\s+)?([a-zA-Z\s]+)(?:\s+(?:at|for|on)\s+)?/i;
+        const match = message.match(reminderPattern);
+        
+        if (match && match[1]) {
+            const potentialMed = match[1].trim();
+            // Avoid setting phrases like "tell me about" as the medication name
+            if (!potentialMed.startsWith("tell me") && 
+                !potentialMed.startsWith("what is") && 
+                potentialMed.length > 2) {
+                currentMedication = potentialMed;
+            }
+        }
+    }
+
+    function showTypingIndicator() {
+      const chatbox = document.getElementById('chatbox');
+      const indicator = document.createElement('div');
+      indicator.className = 'msg bot typing-indicator clearfix';
+      indicator.id = 'typing-indicator';
+      indicator.innerHTML = `
+        <span class="bot-avatar"><i class="fas fa-robot"></i></span>
+        <span></span>
+        <span></span>
+        <span></span>
+      `;
+      chatbox.appendChild(indicator);
+      chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    function removeTypingIndicator() {
+      const indicator = document.getElementById('typing-indicator');
+      if (indicator) {
+        indicator.remove();
+      }
+    }
+    
+    function addMessage(sender, text, type) {
+      const chatbox = document.getElementById('chatbox');
+      const msg = document.createElement('div');
+      msg.classList.add('msg', type, 'clearfix');
+      
+      // Parse markdown for bot messages
+      if (type === 'bot') {
+        // Replace emoji markers with actual icons
+        text = text.replace(/📌/g, '<i class="fas fa-thumbtack icon"></i>');
+        text = text.replace(/📋/g, '<i class="fas fa-clipboard-list icon"></i>');
+        text = text.replace(/❌/g, '<i class="fas fa-times-circle icon"></i>');
+        text = text.replace(/⚠️/g, '<i class="fas fa-exclamation-triangle icon"></i>');
+        text = text.replace(/✅/g, '<i class="fas fa-check-circle icon"></i>');
+        
+        // Don't replace 'you' with user's name - this causes problems
+        // instead, just use the text as-is
+        
+        // Parse the markdown
+        const parsedContent = marked.parse(text);
+        
+        let botIcon = '<span class="bot-avatar"><i class="fas fa-robot"></i></span>';
+        msg.innerHTML = `<strong>${botIcon} ${sender}:</strong> ${parsedContent}`;
+        
+        // If the message contains medication schedule information, visualize it better
+        if (text.includes("Reminder set") || text.includes("scheduled at") || 
+            text.includes("Reminder Set") || text.includes("has been set for")) {
+          enhanceMedicationDisplay(msg);
+        }
+        
+        // If the message contains conditions like "dengue", add visual disease cards
+        if (text.toLowerCase().includes("dengue") || 
+            text.toLowerCase().includes("malaria") || 
+            text.toLowerCase().includes("covid")) {
+          enhanceConditionDisplay(msg, text);
+        }
+      } else {
+        msg.innerHTML = `<strong>${sender}:</strong> ${text}`;
+      }
+      
+      chatbox.appendChild(msg);
+      chatbox.scrollTop = chatbox.scrollHeight;
+    }
+    
+    function enhanceMedicationDisplay(messageElement) {
+      // Look for medication name and time in the message
+      const content = messageElement.innerHTML;
+      const medNameMatch = content.match(/\*\*([^*]+)\*\*/);
+      const timeMatch = content.match(/at \*\*([^*]+)\*\*/);
+      
+      if (medNameMatch && timeMatch) {
+        const medName = medNameMatch[1];
+        const medTime = timeMatch[1];
+        
+        // Create a visual schedule element
+        const scheduleDiv = document.createElement('div');
+        scheduleDiv.className = 'medication-schedule';
+        scheduleDiv.innerHTML = `
+          <div class="medication-item">
+            <div class="medication-time">
+              <i class="fas fa-clock"></i> ${medTime}
+            </div>
+            <div class="medication-name">
+              <i class="fas fa-pills"></i> ${medName}
+            </div>
+          </div>
+        `;
+        
+        // Insert the visual element
+        messageElement.appendChild(scheduleDiv);
+      }
+    }
+    
+    function enhanceConditionDisplay(messageElement, text) {
+      // Check which condition is mentioned
+      const conditions = ["dengue", "malaria", "covid"];
+      let foundCondition = "";
+      
+      for (const condition of conditions) {
+        if (text.toLowerCase().includes(condition)) {
+          foundCondition = condition;
+          break;
+        }
+      }
+      
+      if (foundCondition) {
+        // Create condition-specific visual element
+        let icon, color, description;
+        
+        switch(foundCondition) {
+          case "dengue":
+            icon = "fa-bug";
+            color = "#ff6b6b";
+            description = "Dengue fever is a mosquito-borne disease that requires proper hydration and fever management";
+            break;
+          case "malaria":
+            icon = "fa-mosquito";
+            color = "#5e72e4";
+            description = "Malaria is a serious mosquito-borne disease requiring specific antimalarial medications";
+            break;
+          case "covid":
+            icon = "fa-virus";
+            color = "#8854d0";
+            description = "COVID-19 is a respiratory illness that may require symptom management and isolation";
+            break;
+        }
+        
+        const conditionDiv = document.createElement('div');
+        conditionDiv.className = 'condition-info';
+        conditionDiv.innerHTML = `
+          <div style="display: flex; align-items: center; background: ${color}15; border: 1px solid ${color}; border-radius: 10px; padding: 15px; margin: 10px 0;">
+            <div style="background: ${color}; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
+              <i class="fas ${icon}" style="color: white; font-size: 24px;"></i>
+            </div>
+            <div>
+              <div style="font-weight: bold; font-size: 18px; margin-bottom: 5px;">${foundCondition.charAt(0).toUpperCase() + foundCondition.slice(1)} Management</div>
+              <div style="font-size: 14px;">${description}</div>
+            </div>
+          </div>
+        `;
+        
+        // Insert the visual element
+        messageElement.appendChild(conditionDiv);
+      }
+    }
+    
+    // Add an event listener for the Enter key
+    document.getElementById('userInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        sendMessage();
+      }
+    });
+    
+    function loadChatHistory() {
+      // Remove the check for chatHistoryLoaded
+      // if (chatHistoryLoaded) return;
+
+      console.log("Attempting to load chat history..."); // Add log
+      const chatbox = document.getElementById('chatbox');
+      // Clear the chatbox *before* fetching to avoid appending duplicates on reload
+      chatbox.innerHTML = '';
+      // Show a temporary loading message
+      chatbox.innerHTML = '<div class="msg bot"><span class="bot-avatar"><i class="fas fa-spinner fa-spin"></i></span> Loading history...</div>';
+
+
+      fetch('/get-chat-history')
+        .then(res => res.json())
+        .then(data => {
+          // Clear loading message
+          chatbox.innerHTML = '';
+
+          if (data.history && data.history.length > 0) {
+            console.log("Chat history found, loading messages."); // Add log
+
+            // Replay the chat history
+            data.history.forEach(msg => {
+              addMessage(msg.role === 'user' ? 'You' : 'Bot', msg.content, msg.role);
+            });
+
+            // chatHistoryLoaded = true; // No longer needed
+            chatbox.scrollTop = chatbox.scrollHeight; // Scroll to bottom after loading
+            updateQuickResponses(); // Update quick responses based on the last message context if needed
+          } else {
+            console.log("No chat history found, showing default greeting."); // Add log
+            // If no history, show the greeting
+            setTimeout(() => {
+                const greeting = userProfile.name ?
+                  `## Welcome back, ${userProfile.name}! 👋\n\nI'm your personal medication assistant. How can I help you today?` :
+                  '## Welcome to MedAssist! 👋\n\nI am your personal medication assistant. How can I help you today?';
+
+                addMessage('Bot', greeting, 'bot');
+                updateQuickResponses();
+            }, 50); // Short delay
+            // chatHistoryLoaded = true; // No longer needed
+          }
+        })
+        .catch(err => {
+          // Clear loading message
+          chatbox.innerHTML = '';
+          console.error('Error loading chat history:', err); // Log error
+          // Show default greeting with error message
+          setTimeout(() => {
+            const greeting = userProfile.name ?
+              `## Welcome back, ${userProfile.name}! 👋\n\nError loading history. How can I help you today?` :
+              '## Welcome to MedAssist! 👋\n\nError loading history. How can I help you today?';
+
+            addMessage('Bot', greeting, 'bot');
+            updateQuickResponses();
+          }, 50);
+          // chatHistoryLoaded = true; // No longer needed
+        });
+    }
+
+    // Function to clear chat history
+    function clearChatHistory() {
+        console.log("Clearing chat history...");
+        fetch('/clear-chat-history', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                console.log("Chat history cleared successfully.");
+                const chatbox = document.getElementById('chatbox');
+                chatbox.innerHTML = ''; // Clear the display
+
+                // Show the default greeting again
+                const greeting = userProfile.name ?
+                  `## Chat history cleared.\n\nHow can I help you today, ${userProfile.name}?` :
+                  '## Chat history cleared.\n\nHow can I help you today?';
+
+                addMessage('Bot', greeting, 'bot');
+                updateQuickResponses('default'); // Reset quick responses
+            } else {
+                console.error("Failed to clear chat history on server:", data.message);
+                alert("Could not clear chat history. Please try again.");
+            }
+        })
+        .catch(err => {
+            console.error('Error clearing chat history:', err);
+            alert("An error occurred while clearing chat history.");
+        });
+    }
+
+    // Add logout button to the header
+    document.querySelector('.header-actions').innerHTML += `
+      <a href="/logout" class="header-btn" id="logout-btn" title="Logout">
+        <i class="fas fa-sign-out-alt"></i>
+      </a>
+    `;
+  </script>
+</body>
+</html>
