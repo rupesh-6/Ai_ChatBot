@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to MedAssist AI</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            /* Use the same refined color palette */
+            --primary-color: #2a6fdb;
+            --secondary-color: #7aaeff;
+            --accent-color: #4a47a3;
+            --background-gradient: linear-gradient(135deg, #eef3f8 0%, #dde8f3 100%);
+            --card-background: rgba(255, 255, 255, 0.95);
+            --transition-speed: 0.3s;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--background-gradient);
+            position: relative;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden; /* Hide overflow for floating shapes */
+        }
+
+        /* Medical themed background elements */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://img.freepik.com/free-vector/healthcare-background-with-medical-symbols-geometric-style_1017-26363.jpg');
+            background-size: cover;
+            background-position: center;
+            opacity: 0.1;
+            z-index: -1;
+        }
+
+        .onboarding-container {
+            background: var(--card-background);
+            padding: 40px 50px;
+            border-radius: 20px;
+            box-shadow: 0 10px 35px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+            backdrop-filter: blur(12px);
+            animation: fadeIn 0.8s ease forwards;
+            z-index: 1; /* Ensure container is above floating shapes */
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .logo {
+            font-size: 48px;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 32px;
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        p {
+            font-size: 18px;
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .get-started-btn {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            padding: 15px 35px;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-speed) ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .get-started-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(42, 111, 219, 0.3);
+        }
+
+        .get-started-btn i {
+            margin-left: 8px;
+        }
+
+        /* Floating Objects Background */
+        .floating-objects {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0; /* Behind the container */
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .float-shape {
+            position: absolute;
+            background-color: rgba(42, 111, 219, 0.08);
+            border-radius: 50%;
+            animation: floatAnimation 10s infinite ease-in-out;
+        }
+
+        .float-shape.shape1 { width: 80px; height: 80px; left: 10%; bottom: 10%; animation-duration: 12s; animation-delay: -2s; }
+        .float-shape.shape2 { width: 120px; height: 120px; left: 70%; bottom: 60%; animation-duration: 15s; animation-delay: -5s; background-color: rgba(122, 174, 255, 0.08); }
+        .float-shape.shape3 { width: 50px; height: 50px; left: 40%; bottom: 30%; animation-duration: 9s; animation-delay: -1s; }
+        .float-shape.shape4 { width: 150px; height: 150px; left: 85%; bottom: 5%; animation-duration: 18s; animation-delay: -7s; background-color: rgba(74, 71, 163, 0.06); }
+        .float-shape.shape5 { width: 60px; height: 60px; left: 20%; bottom: 80%; animation-duration: 11s; animation-delay: -4s; background-color: rgba(122, 174, 255, 0.08); }
+
+        @keyframes floatAnimation {
+            0% { transform: translateY(0) rotate(0deg); opacity: 0.6; }
+            50% { transform: translateY(-40px) translateX(30px) rotate(180deg); opacity: 0.3; }
+            100% { transform: translateY(0) rotate(360deg); opacity: 0.6; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating objects container -->
+    <div class="floating-objects">
+        <div class="float-shape shape1"></div>
+        <div class="float-shape shape2"></div>
+        <div class="float-shape shape3"></div>
+        <div class="float-shape shape4"></div>
+        <div class="float-shape shape5"></div>
+    </div>
+
+    <div class="onboarding-container">
+        <div class="logo">
+            <i class="fas fa-pills"></i>
+        </div>
+        <h1>Welcome to MedAssist AI</h1>
+        <p>Your intelligent assistant for managing medication reminders and getting quick information about your health.</p>
+        <a href="{{ url_for('login') }}" class="get-started-btn">
+            Get Started <i class="fas fa-arrow-right"></i>
+        </a>
+    </div>
+</body>
+</html>
